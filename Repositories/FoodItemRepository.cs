@@ -12,9 +12,13 @@ public interface IFoodItemRepository
     Task<IEnumerable<FoodItem>> GetAll();
     Task<IEnumerable<FoodItem>> GetById(int id);
     Task<IEnumerable<FoodItem>> GetByName(string search);
-    Task Create(FoodItem foodItem);
-    Task Update(FoodItem foodItem, bool foodItemHasChanged, bool tagsHasChanged);
-    Task Delete(int id);
+    Task CreateFoodItem(FoodItem foodItem);
+    Task UpdateFoodItem(FoodItem foodItem, bool foodItemHasChanged, bool tagsHasChanged);
+    Task DeleteFoodItem(int id);
+    Task<List<Tag>> GetAllTags();
+    Task<int>? CreateTag(string tagName);
+    Task UpdateTag(int id, string tagName);
+    Task DeleteTag(int id);
 }
 
 public class FoodItemRepository(DataContext context) : IFoodItemRepository
@@ -87,7 +91,7 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
         return result;
     }
 
-    public async Task Create(FoodItem foodItem)
+    public async Task CreateFoodItem(FoodItem foodItem)
     {
         using var connection = context.CreateConnection();
         connection.Open();
@@ -126,7 +130,7 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
         }
     }
 
-    public async Task Update(FoodItem foodItem, bool foodItemChanged, bool tagsChanged)
+    public async Task UpdateFoodItem(FoodItem foodItem, bool foodItemChanged, bool tagsChanged)
     {
         // if foodItem has changed, update foodItem
         // if foodItem has not changed but tags have, update tags only
@@ -147,7 +151,7 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
 
                         if (tagsChanged)
                         {
-                            var sqlDeleteTags = SqlDeleteTags();
+                            var sqlDeleteTags = SqlDeleteFoodItemTags();
                             await sqliteConnection.ExecuteAsync(sqlDeleteTags, foodItem, transaction);
                             await InsertTags(foodItem, sqliteConnection, transaction);
                         }
@@ -166,7 +170,7 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
                     using var tagTransaction = sqliteConnection.BeginTransaction();
                     try
                     {
-                        var sqlDeleteTags = SqlDeleteTags();
+                        var sqlDeleteTags = SqlDeleteFoodItemTags();
                         await sqliteConnection.ExecuteAsync(sqlDeleteTags, foodItem, tagTransaction);
                         await InsertTags(foodItem, sqliteConnection, tagTransaction);
                         tagTransaction.Commit();
@@ -187,13 +191,13 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
         {
             foreach (var tag in foodItem.Tags)
             {
-                var sqlInsertTags = SqlInsertTags();
+                var sqlInsertTags = SqlInsertFoodItemTags();
                 await sqliteConnection.ExecuteAsync(sqlInsertTags, new { foodItem.FoodItemId, tag.TagId }, transaction);
             }
         }
     }
 
-    private static string SqlInsertTags()
+    private static string SqlInsertFoodItemTags()
     {
         var sqlInsertTags = """
                             INSERT INTO FoodItemTags (FoodItemId, TagId)
@@ -202,7 +206,7 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
         return sqlInsertTags;
     }
 
-    private static string SqlDeleteTags()
+    private static string SqlDeleteFoodItemTags()
     {
         var sqlDeleteTags = """
                               DELETE FROM FoodItemTags
@@ -227,13 +231,69 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
         return sqlUpdateFoodItem;
     }
 
-    public async Task Delete(int id)
+    public async Task DeleteFoodItem(int id)
     {
         using var connection = context.CreateConnection();
         var sql = """
             DELETE FROM FoodItems 
             WHERE Id = @id
         """;
+        await connection.ExecuteAsync(sql, new { id });
+    }
+
+    public async Task<List<Tag>> GetAllTags()
+    {
+        using var connection = context.CreateConnection();
+        const string sql = "Select TagId, TagName FROM Tags ORDER BY TagName";
+        var result = await connection.QueryAsync<Tag>(sql);
+        return result.ToList();
+    }
+
+
+    public async Task<int>? CreateTag(string tagName)
+    {
+        using var connection = context.CreateConnection();
+        var parameter = new { TagName = tagName };
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+        try
+        {
+            var sql = "INSERT INTO Tags (TagName) VALUES (@TagName)";
+            await connection.ExecuteAsync(sql, parameter, transaction);
+
+            // Get the last inserted tag id
+            sql = "SELECT last_insert_rowid()";
+            var result = await connection.ExecuteScalarAsync<int>(sql, transaction);
+            transaction.Commit();
+
+            return result;
+
+        }
+        catch (Exception e)
+        {
+            transaction.Rollback();
+            throw new Exception(e.Message);
+        }
+    }
+
+
+    public async Task UpdateTag(int id, string tagName)
+    {
+        using var connection = context.CreateConnection();
+        var sql = """
+                      UPDATE Tags SET TagName = @tagName
+                      WHERE TagId = @id
+                  """;
+        await connection.ExecuteAsync(sql, new { id, tagName });
+    }
+
+    public async Task DeleteTag(int id)
+    {
+        using var connection = context.CreateConnection();
+        var sql = """
+                      DELETE FROM Tags
+                      WHERE TagId = @id
+                  """;
         await connection.ExecuteAsync(sql, new { id });
     }
 }

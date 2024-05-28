@@ -9,32 +9,28 @@ using WebApi.Repositories;
 
 public interface IFoodItemService
 {
-    Task<IEnumerable<FoodItem>> GetAll();
-    Task<IEnumerable<FoodItem>> GetById(int id);
-    Task<IEnumerable<FoodItem>> GetByName(string name);
-    Task Create(CreateRequest model);
-    Task Update(int id, UpdateRequest model);
-    Task Delete(int id);
+    Task<IEnumerable<FoodItem>> GetAllFoodItems();
+    Task<IEnumerable<FoodItem>> GetFoodItemById(int id);
+    Task<IEnumerable<FoodItem>> GetFoodItemByName(string name);
+    Task CreateFoodItem(CreateRequest model);
+    Task UpdateFoodItem(int id, UpdateRequest model);
+    Task DeleteFoodItem(int id);
+    Task<List<Tag>> GetAllTags();
+    Task<int> CreateTag(string tagName);
+    Task UpdateTag(int id, string tagName);
+    Task DeleteTag(int id);
 }
 
-public class FoodItemService : IFoodItemService
+public class FoodItemService(IFoodItemRepository foodItemRepository) : IFoodItemService
 {
-    private readonly IFoodItemRepository _FoodItemRepository;
-
-    public FoodItemService(
-        IFoodItemRepository FoodItemRepository)
+    public async Task<IEnumerable<FoodItem>> GetAllFoodItems()
     {
-        _FoodItemRepository = FoodItemRepository;
+        return await foodItemRepository.GetAll();
     }
 
-    public async Task<IEnumerable<FoodItem>> GetAll()
+    public async Task<IEnumerable<FoodItem>> GetFoodItemById(int id)
     {
-        return await _FoodItemRepository.GetAll();
-    }
-
-    public async Task<IEnumerable<FoodItem>> GetById(int id)
-    {
-        var foodItem = await _FoodItemRepository.GetById(id);
+        var foodItem = await foodItemRepository.GetById(id);
 
         if (foodItem == null)
             throw new KeyNotFoundException("FoodItem not found");
@@ -42,12 +38,12 @@ public class FoodItemService : IFoodItemService
         return foodItem;
     }
 
-    public async Task<IEnumerable<FoodItem>> GetByName(string name)
+    public async Task<IEnumerable<FoodItem>> GetFoodItemByName(string name)
     {
-        return await _FoodItemRepository.GetByName(name);
+        return await foodItemRepository.GetByName(name);
     }
 
-    public async Task Create(CreateRequest model)
+    public async Task CreateFoodItem(CreateRequest model)
     {
         // map model to new FoodItem object
         var foodItem = new FoodItem
@@ -71,12 +67,12 @@ public class FoodItemService : IFoodItemService
         if (string.IsNullOrEmpty(foodItem.DateFrozen)) foodItem.DateFrozen = DateTime.Now.ToString("yyyy-MM-dd");
 
         // save FoodItem
-        await _FoodItemRepository.Create(foodItem);
+        await foodItemRepository.CreateFoodItem(foodItem);
     }
 
-    public async Task Update(int id, UpdateRequest model)
+    public async Task UpdateFoodItem(int id, UpdateRequest model)
     {
-        var dbFoodItems = await _FoodItemRepository.GetById(id);
+        var dbFoodItems = await foodItemRepository.GetById(id);
         var foodItem = (dbFoodItems?.FirstOrDefault()) ?? throw new KeyNotFoundException("FoodItem not found");
 
         var foodItemHasChanged = FoodItemHasChanged(ref model, ref foodItem);
@@ -97,7 +93,7 @@ public class FoodItemService : IFoodItemService
             Tags = model.Tags?.Select(t => new Tag { TagId = t.TagId, TagName = t.TagName }).ToList() ?? new List<Tag>()
         };
 
-        await _FoodItemRepository.Update(foodItemToUpdate, foodItemHasChanged, tagsChanged);
+        await foodItemRepository.UpdateFoodItem(foodItemToUpdate, foodItemHasChanged, tagsChanged);
     }
 
     private static bool FoodItemHasChanged(ref UpdateRequest model, ref FoodItem foodItem)
@@ -116,8 +112,30 @@ public class FoodItemService : IFoodItemService
         return tagsChanged;
     }
 
-    public async Task Delete(int id)
+    public async Task DeleteFoodItem(int id)
     {
-        await _FoodItemRepository.Delete(id);
+        await foodItemRepository.DeleteFoodItem(id);
+    }
+
+    public async Task<List<Tag>> GetAllTags()
+    {
+        var result = await foodItemRepository.GetAllTags();
+        return result;
+    }
+
+    public async Task<int> CreateTag(string tagName)
+    {
+        var result = await foodItemRepository.CreateTag(tagName);
+        return result;
+    }
+
+    public async Task UpdateTag(int id, string tagName)
+    {
+        await foodItemRepository.UpdateTag(id, tagName);
+    }
+
+    public async Task DeleteTag(int id)
+    {
+        await foodItemRepository.DeleteTag(id);
     }
 }
