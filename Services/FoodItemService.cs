@@ -1,4 +1,5 @@
 using System.Data;
+using WebApi.Helpers;
 
 namespace WebApi.Services;
 
@@ -75,14 +76,28 @@ public class FoodItemService : IFoodItemService
 
     public async Task Update(int id, UpdateRequest model)
     {
-        var foodItems = await _FoodItemRepository.GetById(id);
-        var foodItem = (foodItems?.FirstOrDefault()) ?? throw new KeyNotFoundException("FoodItem not found");
+        var dbFoodItems = await _FoodItemRepository.GetById(id);
+        var foodItem = (dbFoodItems?.FirstOrDefault()) ?? throw new KeyNotFoundException("FoodItem not found");
 
-        if (!FoodItemHasChanged(ref model, ref foodItem)) return;
+        var foodItemHasChanged = FoodItemHasChanged(ref model, ref foodItem);
+        var tagsChanged = FoodItemTagHasChanged(ref model, ref foodItem);
 
+        if (!foodItemHasChanged && !tagsChanged) return;
 
-        // save FoodItem
-        await _FoodItemRepository.Update(foodItem);
+        //convert model to FoodItem object
+        var foodItemToUpdate = new FoodItem
+        {
+            FoodItemId = id,
+            Name = model.Name,
+            Description = model.Description,
+            DateFrozen = model.DateFrozen,
+            Quantity = model.Quantity ?? 0,
+            FreezerLocation = model.FreezerLocation,
+            ItemLocation = model.ItemLocation,
+            Tags = model.Tags?.Select(t => new Tag { TagId = t.TagId, TagName = t.TagName }).ToList() ?? new List<Tag>()
+        };
+
+        await _FoodItemRepository.Update(foodItemToUpdate, foodItemHasChanged, tagsChanged);
     }
 
     private static bool FoodItemHasChanged(ref UpdateRequest model, ref FoodItem foodItem)
@@ -91,13 +106,14 @@ public class FoodItemService : IFoodItemService
         if (model.Description != null && !model.Description.Equals(foodItem.Description)) return true;
         if (model.DateFrozen != null && !model.DateFrozen.Equals(foodItem.DateFrozen)) return true;
         if (model.Quantity.HasValue && !model.Quantity.Equals(foodItem.Quantity)) return true;
-        if (model.FreezerLocation != null && model.FreezerLocation.Equals(foodItem.FreezerLocation)) return true;
-        return model.ItemLocation != null && model.ItemLocation.Equals(foodItem.ItemLocation);
+        if (model.FreezerLocation != null && !model.FreezerLocation.Equals(foodItem.FreezerLocation)) return true;
+        return model.ItemLocation != null && !model.ItemLocation.Equals(foodItem.ItemLocation);
     }
 
     public static bool FoodItemTagHasChanged(ref UpdateRequest model, ref FoodItem foodItem)
     {
-        return foodItem.Tags is { Count: > 0 } && model.Tags is { Count: > 0 } && !model.Tags.SequenceEqual(foodItem.Tags);
+        var tagsChanged = model.Tags is { Count: > 0 } && foodItem.Tags is { Count: > 0 } && !model.Tags.SequenceEqual(foodItem.Tags, new TagComparer());
+        return tagsChanged;
     }
 
     public async Task Delete(int id)
