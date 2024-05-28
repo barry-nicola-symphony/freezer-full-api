@@ -22,17 +22,17 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
     public async Task<IEnumerable<FoodItem>> GetAll()
     {
         using var connection = context.CreateConnection();
-        var sql = @"
+        const string sql = @"
         select fi.FoodItemId, fi.Name, Description, Quantity, FreezerLocation, ItemLocation, DateFrozen, t.TagId, TagName
             from FoodItems fi
-            Inner Join FoodItemTags ft on ft.FoodItemId = fi.FoodItemId
-            Inner Join Tags t on t.TagId = ft.TagId
+            Left Join FoodItemTags ft on ft.FoodItemId = fi.FoodItemId
+            Left Join Tags t on t.TagId = ft.TagId
             Order By fi.Name
     ";
 
         var foodItems = await connection.QueryAsync<FoodItem, Tag, FoodItem>(sql, (foodItem, tag) =>
         {
-            foodItem.Tags ??= new List<Tag>();
+            foodItem.Tags ??= [];
             foodItem.Tags.Add(tag);
             return foodItem;
         }, splitOn: "TagId");
@@ -40,7 +40,8 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
         var result = foodItems.GroupBy(f => f.FoodItemId).Select(g =>
         {
             var groupedFoodItems = g.First();
-            groupedFoodItems.Tags = g.Select(selector: f => f.Tags.SingleOrDefault()).ToList();
+            //groupedFoodItems.Tags = g.Select(f => f.Tags?.SingleOrDefault()).Where(t => t != null).ToList();
+            groupedFoodItems.Tags = g.SelectMany(f => f.Tags ?? Enumerable.Empty<Tag>()).ToList();
             return groupedFoodItems;
         });
 
@@ -55,14 +56,14 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
         const string sql = @"
         select fi.FoodItemId, fi.Name, Description, Quantity, FreezerLocation, ItemLocation, DateFrozen, t.TagId, TagName
             from FoodItems fi
-            Inner Join FoodItemTags ft on ft.FoodItemId = fi.FoodItemId
-            Inner Join Tags t on t.TagId = ft.TagId
+            Left Join FoodItemTags ft on ft.FoodItemId = fi.FoodItemId
+            Left Join Tags t on t.TagId = ft.TagId
             Where fi.FoodItemId = @FoodItemId
         ";
 
         var foodItems = await connection.QueryAsync<FoodItem, Tag, FoodItem>(sql, (foodItem, tag) =>
         {
-            foodItem.Tags ??= new List<Tag>();
+            foodItem.Tags ??= [];
             foodItem.Tags.Add(tag);
             return foodItem;
         }, parameter, splitOn: "TagId");
@@ -70,7 +71,8 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
         var result = foodItems.GroupBy(f => f.FoodItemId).Select(g =>
         {
             var groupedFoodItems = g.First();
-            groupedFoodItems.Tags = g.Select(selector: f => f.Tags.SingleOrDefault()).ToList();
+            //groupedFoodItems.Tags = g.Select(f => f.Tags?.SingleOrDefault()).Where(t => t != null).ToList();
+            groupedFoodItems.Tags = g.SelectMany(f => f.Tags ?? Enumerable.Empty<Tag>()).ToList();
             return groupedFoodItems;
         });
 

@@ -34,7 +34,6 @@ var builder = WebApplication.CreateBuilder(args);
             // ignore omitted parameters on models to enable optional params (e.g. FoodItem update)
             x.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
         });
-    services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
     // configure DI for application services
     services.AddScoped<IFoodItemRepository, FoodItemRepository>();
