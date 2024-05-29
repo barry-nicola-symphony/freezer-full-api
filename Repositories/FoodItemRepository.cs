@@ -10,10 +10,12 @@ using WebApi.Helpers;
 public interface IFoodItemRepository
 {
     Task<IEnumerable<FoodItem>> GetAll();
-    Task<IEnumerable<FoodItem>> GetById(int id);
+    Task<FoodItem> GetFoodItemById(int id);
+    Task<IEnumerable<FoodItem>> GetFoodItemAndTagsById(int id);
     Task<IEnumerable<FoodItem>> GetByName(string search);
     Task CreateFoodItem(FoodItem foodItem);
-    Task UpdateFoodItem(FoodItem foodItem, bool foodItemHasChanged, bool tagsHasChanged);
+    Task UpdateFoodItem(FoodItem FoodItem);
+    Task UpdateFoodItemAndTags(FoodItem foodItem, bool foodItemHasChanged, bool tagsHasChanged);
     Task DeleteFoodItem(int id);
     Task<List<Tag>> GetAllTags();
     Task<int>? CreateTag(string tagName);
@@ -52,17 +54,28 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
     }
 
 
-    public async Task<IEnumerable<FoodItem>> GetById(int id)
+    public async Task<FoodItem> GetFoodItemById(int id)
+    {
+        using var connection = context.CreateConnection();
+        var sql = """
+                      SELECT * FROM FoodItems
+                      WHERE FoodItemId = @id
+                  """;
+        var result = await connection.QuerySingleOrDefaultAsync<FoodItem>(sql, new { id });
+        return result ?? new FoodItem();
+    }
+
+    public async Task<IEnumerable<FoodItem>> GetFoodItemAndTagsById(int id)
     {
         using var connection = context.CreateConnection();
         var parameter = new { FoodItemId = id };
         const string sql = @"
-        select fi.FoodItemId, fi.Name, Description, Quantity, FreezerLocation, ItemLocation, DateFrozen, t.TagId, TagName
-            from FoodItems fi
-            Left Join FoodItemTags ft on ft.FoodItemId = fi.FoodItemId
-            Left Join Tags t on t.TagId = ft.TagId
-            Where fi.FoodItemId = @FoodItemId
-        ";
+    select fi.FoodItemId, fi.Name, Description, Quantity, FreezerLocation, ItemLocation, DateFrozen, t.TagId, TagName
+        from FoodItems fi
+        Left Join FoodItemTags ft on ft.FoodItemId = fi.FoodItemId
+        Left Join Tags t on t.TagId = ft.TagId
+        Where fi.FoodItemId = @FoodItemId
+    ";
 
         var foodItems = await connection.QueryAsync<FoodItem, Tag, FoodItem>(sql, (foodItem, tag) =>
         {
@@ -130,7 +143,22 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
         }
     }
 
-    public async Task UpdateFoodItem(FoodItem foodItem, bool foodItemChanged, bool tagsChanged)
+    public async Task UpdateFoodItem(FoodItem FoodItem)
+    {
+        using var connection = context.CreateConnection();
+        var sql = """
+                      UPDATE FoodItems
+                      SET Name = @Name,
+                          Description = @Description,
+                          DateFrozen = @DateFrozen,
+                          Quantity = @Quantity,
+                          FreezerLocation = @FreezerLocation,
+                          ItemLocation = @ItemLocation
+                      WHERE Id = @Id
+                  """;
+        await connection.ExecuteAsync(sql, FoodItem);
+    }
+    public async Task UpdateFoodItemAndTags(FoodItem foodItem, bool foodItemChanged, bool tagsChanged)
     {
         // if foodItem has changed, update foodItem
         // if foodItem has not changed but tags have, update tags only
@@ -249,7 +277,6 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
         return result.ToList();
     }
 
-
     public async Task<int>? CreateTag(string tagName)
     {
         using var connection = context.CreateConnection();
@@ -275,7 +302,6 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
             throw new Exception(e.Message);
         }
     }
-
 
     public async Task UpdateTag(int id, string tagName)
     {

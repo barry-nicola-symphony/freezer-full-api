@@ -10,10 +10,11 @@ using WebApi.Repositories;
 public interface IFoodItemService
 {
     Task<IEnumerable<FoodItem>> GetAllFoodItems();
-    Task<IEnumerable<FoodItem>> GetFoodItemById(int id);
+    Task<FoodItem> GetFoodItemById(int id);
     Task<IEnumerable<FoodItem>> GetFoodItemByName(string name);
     Task CreateFoodItem(CreateRequest model);
     Task UpdateFoodItem(int id, UpdateRequest model);
+    Task UpdateFoodItemAndTags(int id, UpdateRequest model);
     Task DeleteFoodItem(int id);
     Task<List<Tag>> GetAllTags();
     Task<int> CreateTag(string tagName);
@@ -28,13 +29,15 @@ public class FoodItemService(IFoodItemRepository foodItemRepository) : IFoodItem
         return await foodItemRepository.GetAll();
     }
 
-    public async Task<IEnumerable<FoodItem>> GetFoodItemById(int id)
+    public async Task<FoodItem> GetFoodItemById(int id)
     {
-        var foodItem = await foodItemRepository.GetById(id);
+        var foodItem = await foodItemRepository.GetFoodItemById(id);
 
-        if (foodItem == null)
-            throw new KeyNotFoundException("FoodItem not found");
-
+        return foodItem ?? throw new KeyNotFoundException("FoodItem not found");
+    }
+    public async Task<IEnumerable<FoodItem>> GetFoodItemAndTagsById(int id)
+    {
+        var foodItem = await foodItemRepository.GetFoodItemAndTagsById(id) ?? throw new KeyNotFoundException("FoodItem not found");
         return foodItem;
     }
 
@@ -72,8 +75,32 @@ public class FoodItemService(IFoodItemRepository foodItemRepository) : IFoodItem
 
     public async Task UpdateFoodItem(int id, UpdateRequest model)
     {
-        var dbFoodItems = await foodItemRepository.GetById(id);
-        var foodItem = (dbFoodItems?.FirstOrDefault()) ?? throw new KeyNotFoundException("FoodItem not found");
+        var foodItem = await foodItemRepository.GetFoodItemById(id);
+
+        if (foodItem == null)
+            throw new KeyNotFoundException("FoodItem not found");
+
+        //convert model to FoodItem object
+        var foodItemToUpdate = new FoodItem
+        {
+            FoodItemId = id,
+            Name = model.Name,
+            Description = model.Description,
+            DateFrozen = model.DateFrozen,
+            Quantity = model.Quantity ?? 0,
+            FreezerLocation = model.FreezerLocation,
+            ItemLocation = model.ItemLocation,
+            Tags = model.Tags?.Select(t => new Tag { TagId = t.TagId, TagName = t.TagName }).ToList() ?? new List<Tag>()
+        };
+
+        // save FoodItem
+        await foodItemRepository.UpdateFoodItem(foodItem);
+    }
+
+    public async Task UpdateFoodItemAndTags(int id, UpdateRequest model)
+    {
+        var dbFoodItems = await foodItemRepository.GetFoodItemAndTagsById(id);
+        var foodItem = (dbFoodItems.FirstOrDefault()) ?? throw new KeyNotFoundException("FoodItem not found");
 
         var foodItemHasChanged = FoodItemHasChanged(ref model, ref foodItem);
         var tagsChanged = FoodItemTagHasChanged(ref model, ref foodItem);
@@ -93,7 +120,7 @@ public class FoodItemService(IFoodItemRepository foodItemRepository) : IFoodItem
             Tags = model.Tags?.Select(t => new Tag { TagId = t.TagId, TagName = t.TagName }).ToList() ?? new List<Tag>()
         };
 
-        await foodItemRepository.UpdateFoodItem(foodItemToUpdate, foodItemHasChanged, tagsChanged);
+        await foodItemRepository.UpdateFoodItemAndTags(foodItemToUpdate, foodItemHasChanged, tagsChanged);
     }
 
     private static bool FoodItemHasChanged(ref UpdateRequest model, ref FoodItem foodItem)
