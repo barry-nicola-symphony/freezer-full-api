@@ -154,7 +154,7 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
                           Quantity = @Quantity,
                           FreezerLocation = @FreezerLocation,
                           ItemLocation = @ItemLocation
-                      WHERE Id = @Id
+                      WHERE FoodItemId = @FoodItemId
                   """;
         await connection.ExecuteAsync(sql, FoodItem);
     }
@@ -262,11 +262,13 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
     public async Task DeleteFoodItem(int id)
     {
         using var connection = context.CreateConnection();
-        var sql = """
-            DELETE FROM FoodItems 
-            WHERE Id = @id
-        """;
+
+        var sql = "DELETE FROM FoodItemTags Where FoodItemId = @id";
         await connection.ExecuteAsync(sql, new { id });
+
+        sql = "DELETE FROM FoodItems WHERE FoodItemId = @id";
+        await connection.ExecuteAsync(sql, new { id });
+
     }
 
     public async Task<List<Tag>> GetAllTags()

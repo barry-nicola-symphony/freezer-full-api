@@ -60,12 +60,12 @@ public class FoodItemService(IFoodItemRepository foodItemRepository) : IFoodItem
             Tags = []
         };
 
-        if (model.Tags == null || model.Tags.Count == 0)
+        if (model.Tags?.Count == 0 || model.Tags == null)
         {
             model.Tags = [new Tag { TagId = 222, TagName = "uncategorised" }];
         }
 
-        foodItem.Tags = model.Tags.Select(t => new Tag { TagId = t.TagId, TagName = t.TagName }).ToList();
+        foodItem.Tags = model.Tags?.Select(t => new Tag { TagId = t.TagId, TagName = t.TagName }).ToList();
 
         if (string.IsNullOrEmpty(foodItem.DateFrozen)) foodItem.DateFrozen = DateTime.Now.ToString("yyyy-MM-dd");
 
@@ -94,7 +94,7 @@ public class FoodItemService(IFoodItemRepository foodItemRepository) : IFoodItem
         };
 
         // save FoodItem
-        await foodItemRepository.UpdateFoodItem(foodItem);
+        await foodItemRepository.UpdateFoodItem(foodItemToUpdate);
     }
 
     public async Task UpdateFoodItemAndTags(int id, UpdateRequest model)
