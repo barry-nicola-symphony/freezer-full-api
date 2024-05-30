@@ -59,6 +59,15 @@ public class FoodItemsController(IFoodItemService foodItemService) : ControllerB
         return Ok(tags);
     }
 
+    [HttpGet("[action]/{id:int}")]
+    public async Task<IActionResult> GetTagsForFoodItem(int id)
+    {
+        var foodItemId = Convert.ToInt32(id);
+        var tags = await foodItemService.GetSelectedTagsForFoodItem(foodItemId);
+        return Ok(tags);
+    }
+
+
     [HttpPost("[action]/{tagName}")]
     public async Task<IActionResult> CreateTag(string tagName)
     {

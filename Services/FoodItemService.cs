@@ -17,6 +17,7 @@ public interface IFoodItemService
     Task UpdateFoodItemAndTags(int id, UpdateRequest model);
     Task DeleteFoodItem(int id);
     Task<List<Tag>> GetAllTags();
+    Task<List<Tag>> GetSelectedTagsForFoodItem(int id);
     Task<int> CreateTag(string tagName);
     Task UpdateTag(int id, string tagName);
     Task DeleteTag(int id);
@@ -147,6 +148,12 @@ public class FoodItemService(IFoodItemRepository foodItemRepository) : IFoodItem
     public async Task<List<Tag>> GetAllTags()
     {
         var result = await foodItemRepository.GetAllTags();
+        return result;
+    }
+
+    public async Task<List<Tag>> GetSelectedTagsForFoodItem(int id)
+    {
+        var result = await foodItemRepository.GetSelectedTagsForFoodItem(id);
         return result;
     }
 

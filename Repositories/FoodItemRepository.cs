@@ -18,6 +18,7 @@ public interface IFoodItemRepository
     Task UpdateFoodItemAndTags(FoodItem foodItem, bool foodItemHasChanged, bool tagsHasChanged);
     Task DeleteFoodItem(int id);
     Task<List<Tag>> GetAllTags();
+    Task<List<Tag>> GetSelectedTagsForFoodItem(int id);
     Task<int>? CreateTag(string tagName);
     Task UpdateTag(int id, string tagName);
     Task DeleteTag(int id);
@@ -276,6 +277,19 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
         using var connection = context.CreateConnection();
         const string sql = "Select TagId, TagName FROM Tags ORDER BY TagName";
         var result = await connection.QueryAsync<Tag>(sql);
+        return result.ToList();
+    }
+
+    public async Task<List<Tag>> GetSelectedTagsForFoodItem(int id)
+    {
+        using var connection = context.CreateConnection();
+        const string sql = """
+                           
+                                       select ft.TagId, TagName from FoodItemTags ft
+                                           Left Join Tags t on t.TagId = ft.TagId
+                                       Where ft.FoodItemId = @id
+                           """;
+        var result = await connection.QueryAsync<Tag>(sql, new { id });
         return result.ToList();
     }
 
