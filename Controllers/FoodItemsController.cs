@@ -41,7 +41,7 @@ public class FoodItemsController(IFoodItemService foodItemService) : ControllerB
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateFoodItem(int id, UpdateRequest model)
     {
-        await foodItemService.UpdateFoodItem(id, model);
+        await foodItemService.UpdateFoodItemAndTags(id, model);
         return Ok();
     }
 

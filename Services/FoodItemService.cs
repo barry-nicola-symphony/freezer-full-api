@@ -95,7 +95,7 @@ public class FoodItemService(IFoodItemRepository foodItemRepository) : IFoodItem
         };
 
         // save FoodItem
-        await foodItemRepository.UpdateFoodItem(foodItemToUpdate);
+        await foodItemRepository.UpdateFoodItemAndTags(foodItemToUpdate);
     }
 
     public async Task UpdateFoodItemAndTags(int id, UpdateRequest model)

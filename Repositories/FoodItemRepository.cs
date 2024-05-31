@@ -15,7 +15,7 @@ public interface IFoodItemRepository
     Task<IEnumerable<FoodItem>> GetByName(string search);
     Task CreateFoodItem(FoodItem foodItem);
     Task UpdateFoodItem(FoodItem FoodItem);
-    Task UpdateFoodItemAndTags(FoodItem foodItem, bool foodItemHasChanged, bool tagsHasChanged);
+    Task UpdateFoodItemAndTags(FoodItem foodItem, bool foodItemChanged = true, bool tagChanged = true);
     Task DeleteFoodItem(int id);
     Task<List<Tag>> GetAllTags();
     Task<List<Tag>> GetSelectedTagsForFoodItem(int id);
@@ -159,7 +159,7 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
                   """;
         await connection.ExecuteAsync(sql, FoodItem);
     }
-    public async Task UpdateFoodItemAndTags(FoodItem foodItem, bool foodItemChanged, bool tagsChanged)
+    public async Task UpdateFoodItemAndTags(FoodItem foodItem, bool foodItemChanged = true, bool tagsChanged = true)
     {
         // if foodItem has changed, update foodItem
         // if foodItem has not changed but tags have, update tags only
