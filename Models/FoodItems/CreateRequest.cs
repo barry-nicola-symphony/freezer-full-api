@@ -10,13 +10,13 @@ public class CreateRequest
     public string? Name { get; set; }
 
     public string? Description { get; set; }
-    public string? DateFrozen { get; set; }
+    public string? DateStored { get; set; }
 
     [Required]
     public decimal? Quantity { get; set; }
 
     [Required]
-    public string? FreezerLocation { get; set; }
+    public string? StorageLocation { get; set; }
 
     [Required]
     public string? ItemLocation { get; set; }

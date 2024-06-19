@@ -54,9 +54,9 @@ public class FoodItemService(IFoodItemRepository foodItemRepository) : IFoodItem
         {
             Name = model.Name,
             Description = model.Description,
-            DateFrozen = model.DateFrozen,
+            DateStored = model.DateStored,
             Quantity = (int)model.Quantity!,
-            FreezerLocation = model.FreezerLocation,
+            StorageLocation = model.StorageLocation,
             ItemLocation = model.ItemLocation,
             Tags = []
         };
@@ -68,7 +68,7 @@ public class FoodItemService(IFoodItemRepository foodItemRepository) : IFoodItem
 
         foodItem.Tags = model.Tags?.Select(t => new Tag { TagId = t.TagId, TagName = t.TagName }).ToList();
 
-        if (string.IsNullOrEmpty(foodItem.DateFrozen)) foodItem.DateFrozen = DateTime.Now.ToString("yyyy-MM-dd");
+        if (string.IsNullOrEmpty(foodItem.DateStored)) foodItem.DateStored = DateTime.Now.ToString("yyyy-MM-dd");
 
         // save FoodItem
         await foodItemRepository.CreateFoodItem(foodItem);
@@ -87,9 +87,9 @@ public class FoodItemService(IFoodItemRepository foodItemRepository) : IFoodItem
             FoodItemId = id,
             Name = model.Name,
             Description = model.Description,
-            DateFrozen = model.DateFrozen,
+            DateStored = model.DateStored,
             Quantity = model.Quantity ?? 0,
-            FreezerLocation = model.FreezerLocation,
+            StorageLocation = model.StorageLocation,
             ItemLocation = model.ItemLocation,
             Tags = model.Tags?.Select(t => new Tag { TagId = t.TagId, TagName = t.TagName }).ToList() ?? new List<Tag>()
         };
@@ -114,9 +114,9 @@ public class FoodItemService(IFoodItemRepository foodItemRepository) : IFoodItem
             FoodItemId = id,
             Name = model.Name,
             Description = model.Description,
-            DateFrozen = model.DateFrozen,
+            DateStored = model.DateStored,
             Quantity = model.Quantity ?? 0,
-            FreezerLocation = model.FreezerLocation,
+            StorageLocation = model.StorageLocation,
             ItemLocation = model.ItemLocation,
             Tags = model.Tags?.Select(t => new Tag { TagId = t.TagId, TagName = t.TagName }).ToList() ?? new List<Tag>()
         };
@@ -128,9 +128,9 @@ public class FoodItemService(IFoodItemRepository foodItemRepository) : IFoodItem
     {
         if (model.Name != null && !model.Name.Equals(foodItem.Name)) return true;
         if (model.Description != null && !model.Description.Equals(foodItem.Description)) return true;
-        if (model.DateFrozen != null && !model.DateFrozen.Equals(foodItem.DateFrozen)) return true;
+        if (model.DateStored != null && !model.DateStored.Equals(foodItem.DateStored)) return true;
         if (model.Quantity.HasValue && !model.Quantity.Equals(foodItem.Quantity)) return true;
-        if (model.FreezerLocation != null && !model.FreezerLocation.Equals(foodItem.FreezerLocation)) return true;
+        if (model.StorageLocation != null && !model.StorageLocation.Equals(foodItem.StorageLocation)) return true;
         return model.ItemLocation != null && !model.ItemLocation.Equals(foodItem.ItemLocation);
     }
 

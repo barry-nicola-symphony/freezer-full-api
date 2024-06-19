@@ -30,7 +30,7 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
     {
         using var connection = context.CreateConnection();
         const string sql = @"
-        select fi.FoodItemId, fi.Name, Description, Quantity, FreezerLocation, ItemLocation, DateFrozen, t.TagId, TagName
+        select fi.FoodItemId, fi.Name, Description, Quantity, StorageLocation, ItemLocation, DateStored, t.TagId, TagName
             from FoodItems fi
             Left Join FoodItemTags ft on ft.FoodItemId = fi.FoodItemId
             Left Join Tags t on t.TagId = ft.TagId
@@ -71,7 +71,7 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
         using var connection = context.CreateConnection();
         var parameter = new { FoodItemId = id };
         const string sql = @"
-    select fi.FoodItemId, fi.Name, Description, Quantity, FreezerLocation, ItemLocation, DateFrozen, t.TagId, TagName
+    select fi.FoodItemId, fi.Name, Description, Quantity, StorageLocation, ItemLocation, DateStored, t.TagId, TagName
         from FoodItems fi
         Left Join FoodItemTags ft on ft.FoodItemId = fi.FoodItemId
         Left Join Tags t on t.TagId = ft.TagId
@@ -115,8 +115,8 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
         {
             const string sql = """
                                
-                                  INSERT INTO FoodItems (Name, Description, DateFrozen, Quantity, FreezerLocation, ItemLocation)
-                                  VALUES (@Name, @Description, @DateFrozen, @Quantity, @FreezerLocation, @ItemLocation);
+                                  INSERT INTO FoodItems (Name, Description, DateStored, Quantity, StorageLocation, ItemLocation)
+                                  VALUES (@Name, @Description, @DateStored, @Quantity, @StorageLocation, @ItemLocation);
                                """;
 
             await connection.ExecuteScalarAsync(sql, foodItem, transaction);
@@ -151,9 +151,9 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
                       UPDATE FoodItems
                       SET Name = @Name,
                           Description = @Description,
-                          DateFrozen = @DateFrozen,
+                          DateStored = @DateStored,
                           Quantity = @Quantity,
-                          FreezerLocation = @FreezerLocation,
+                          StorageLocation = @StorageLocation,
                           ItemLocation = @ItemLocation
                       WHERE FoodItemId = @FoodItemId
                   """;
@@ -251,9 +251,9 @@ public class FoodItemRepository(DataContext context) : IFoodItemRepository
                                          UPDATE FoodItems
                                          SET Name = @Name,
                                              Description = @Description,
-                                             DateFrozen = @DateFrozen,
+                                             DateStored = @DateStored,
                                              Quantity = @Quantity,
-                                             FreezerLocation = @FreezerLocation,
+                                             StorageLocation = @StorageLocation,
                                              ItemLocation = @ItemLocation
                                          WHERE FoodItemId = @FoodItemId
                                          """;

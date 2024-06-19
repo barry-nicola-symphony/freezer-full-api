@@ -32,9 +32,9 @@ public class DataContext
                     FoodItemId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
                     Name TEXT COLLATE NOCASE,
                     Description TEXT COLLATE NOCASE,
-                    DateFrozen TEXT,
+                    DateStored TEXT,
                     Quantity REAL,
-                    FreezerLocation TEXT,
+                    StorageLocation TEXT,
                     ItemLocation TEXT
                 );
             """;
