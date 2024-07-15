@@ -1,0 +1,22 @@
+FROM mcr.microsooft.com/dotnet/core/aspnet:8.0 AS base
+WORKDIR /app
+EXPOSE 8080
+EXPOSE 8081
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+ARG BuildConfiguration=Release
+WORKDIR /src
+COPY ["freezer-full-api/freezer-full-api.csproj", "freezer-full-api/"]"]
+RUN dotnet restore "freezer-full-api/freezer-full-api.csproj"
+COPY . .
+WORKDIR "/src/freezer-full-api"
+RUN dotnet build "freezer-full-api.csproj" -c $BuildConfiguration -o /app/build
+
+FROM build AS publish
+ARG BuildConfiguration=Release
+RUN dotnet publish "freezer-full-api.csproj" -c $BuildConfiguration -o /app/publish
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "freezer-full-api.dll"]
